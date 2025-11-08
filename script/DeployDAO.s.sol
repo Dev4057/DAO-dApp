@@ -9,29 +9,52 @@ contract DeployDAO is Script {
         // Read environment variables
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
-        // Read member addresses from environment
-        address member1 = vm.envAddress("MEMBER_1");
-        address member2 = vm.envAddress("MEMBER_2");
-        address member3 = vm.envAddress("MEMBER_3");
+        // Read member addresses from environment (support up to 10 members)
+        address member1 = vm.envOr("MEMBER_1", address(0));
+        address member2 = vm.envOr("MEMBER_2", address(0));
+        address member3 = vm.envOr("MEMBER_3", address(0));
+        address member4 = vm.envOr("MEMBER_4", address(0));
+        address member5 = vm.envOr("MEMBER_5", address(0));
+        address member6 = vm.envOr("MEMBER_6", address(0));
+        address member7 = vm.envOr("MEMBER_7", address(0));
+        address member8 = vm.envOr("MEMBER_8", address(0));
+        address member9 = vm.envOr("MEMBER_9", address(0));
+        address member10 = vm.envOr("MEMBER_10", address(0));
         
-        // Read quorum from environment (with fallback to 2)
-        uint256 quorum = vm.envOr("QUORUM", uint256(2));
+        // Count non-zero members
+        uint256 memberCount = 0;
+        address[10] memory tempMembers = [member1, member2, member3, member4, member5, member6, member7, member8, member9, member10];
+        
+        for (uint256 i = 0; i < 10; i++) {
+            if (tempMembers[i] != address(0)) {
+                memberCount++;
+            }
+        }
+        
+        require(memberCount > 0, "At least one member required");
+        
+        // Create dynamic array with actual member count
+        address[] memory initialMembers = new address[](memberCount);
+        uint256 index = 0;
+        
+        for (uint256 i = 0; i < 10; i++) {
+            if (tempMembers[i] != address(0)) {
+                initialMembers[index] = tempMembers[i];
+                index++;
+            }
+        }
+        
+        // Read quorum from environment (default to 50% of members, minimum 1)
+        uint256 defaultQuorum = (memberCount + 1) / 2; // Ceiling division
+        uint256 quorum = vm.envOr("QUORUM", defaultQuorum);
+        
+        require(quorum > 0 && quorum <= memberCount, "Invalid quorum");
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        // Define initial members
-        address[] memory initialMembers = new address[](3);
-        initialMembers[0] = member1;
-        initialMembers[1] = member2;
-        initialMembers[2] = member3;
-
         // Deploy the DAO contract
         DAO dao = new DAO(initialMembers, quorum);
-
-        // Optionally fund the DAO with initial ETH
-        // (bool success, ) = address(dao).call{value: 1 ether}("");
-        // require(success, "Failed to fund DAO");
 
         vm.stopBroadcast();
 
@@ -46,23 +69,15 @@ contract DeployDAO is Script {
         console.log("Voting Duration:", dao.votingDuration() / 1 days, "days");
         console.log("========================================");
         console.log("Initial Members:");
-        console.log("  Member 1:", member1);
-        console.log("  Member 2:", member2);
-        console.log("  Member 3:", member3);
+        for (uint256 i = 0; i < initialMembers.length; i++) {
+            console.log("  Member", i + 1, ":", initialMembers[i]);
+        }
+        console.log("========================================");
+        console.log("");
+        console.log("IMPORTANT: Update your frontend with this address:");
+        console.log("const DAO_ADDRESS = \"", vm.toString(address(dao)), "\";");
         console.log("========================================");
 
         return dao;
-    }
-}
-
-// Separate script for verifying the contract on Etherscan
-contract VerifyDAO is Script {
-    function run() external {
-        // Get the deployed DAO address
-        address daoAddress = vm.envAddress("DAO_ADDRESS");
-        
-        console.log("Verifying DAO at:", daoAddress);
-        console.log("Run this command:");
-        console.log("forge verify-contract", daoAddress, "src/DAO.sol:DAO --chain-id <CHAIN_ID> --etherscan-api-key $ETHERSCAN_API_KEY");
     }
 }
