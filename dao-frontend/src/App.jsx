@@ -190,7 +190,7 @@ function LandingPage({ onConnect }) {
             <span className="text-2xl font-bold">DAO Governance</span>
           </div>
           <p className="text-gray-400 mb-4">Empowering communities through decentralized decision making</p>
-          <p className="text-gray-500 text-sm">© 2024 DAO Governance. Built with ❤️ on Ethereum</p>
+          <p className="text-gray-500 text-sm">© 2025 DAO Governance. Built with ❤️ on Ethereum</p>
         </div>
       </footer>
     </div>
